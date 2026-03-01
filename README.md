@@ -1,6 +1,6 @@
 # 📄 FastAPI JWT Authentication Project Documentation
 
-## 1️⃣ Project Overview
+## 1 Project Overview
 
 This project is a **full-featured authentication system** built using **FastAPI**, **SQLAlchemy**, **SQLite**, **JWT**, and **Argon2 password hashing**. It demonstrates secure signup, login, logout, and protected routes using HTTP-only cookies.
 
@@ -16,7 +16,7 @@ This project is a **full-featured authentication system** built using **FastAPI*
 
 ---
 
-## 2️⃣ Technology Stack
+## 2 Technology Stack
 
 | Component             | Purpose                                      |
 | --------------------- | -------------------------------------------- |
@@ -31,7 +31,7 @@ This project is a **full-featured authentication system** built using **FastAPI*
 
 ---
 
-## 3️⃣ Project Structure
+## 3 Project Structure
 
 ```
 fastapi_auth_app/
@@ -54,7 +54,7 @@ fastapi_auth_app/
 
 ---
 
-## 4️⃣ Installation
+## 4️ Installation
 
 1. Clone or copy the project folder.
 2. Create a virtual environment (recommended):
@@ -81,13 +81,13 @@ pip install -r requirements.txt
 
 ---
 
-# 🏗 Project Architecture & Data Flow
+# 5 🏗 Project Architecture & Data Flow
 
 This section explains **how data flows from the client (browser) to the server and database**, and how JWT is used to secure the protected routes.
 
 ---
 
-## 1️⃣ Overall Architecture
+## Overall Architecture
 
 ```
 +-------------------+         HTTP Requests         +-------------------+
@@ -114,8 +114,13 @@ This section explains **how data flows from the client (browser) to the server a
 ```
 
 ---
+### Project Screenshots
 
-## 2️⃣ Detailed Data Flow for Signup
+![Sign Up page](./image/Signup%20page.png)
+![Login page](./image/login%20page.png)
+![Home page](./image/home%20page.png)
+
+## Detailed Data Flow for Signup
 
 1. **User submits signup form** on `/signup` page:
 
@@ -151,7 +156,7 @@ db.commit()
 
 ---
 
-## 3️⃣ Detailed Data Flow for Login
+## Detailed Data Flow for Login
 
 1. **User submits login form** on `/login` page.
 2. FastAPI receives **POST /login**.
@@ -183,7 +188,7 @@ response.set_cookie(key="access_token", value=token, httponly=True)
 
 ---
 
-## 4️⃣ Data Flow for Protected Route (`/home`)
+## Data Flow for Protected Route (`/home`)
 
 1. Browser sends **GET /home** with **access_token cookie**.
 2. FastAPI dependency `get_current_user` executes:
@@ -214,7 +219,7 @@ user = db.query(User).filter(User.username == username).first()
 
 ---
 
-## 5️⃣ Data Flow for Logout
+## Data Flow for Logout
 
 1. Browser requests `/logout`.
 2. Server deletes `access_token` cookie:
@@ -228,7 +233,7 @@ response.delete_cookie("access_token")
 
 ---
 
-## 6️⃣ JWT Lifecycle
+## JWT Lifecycle
 
 | Step       | Description                                                        |
 | ---------- | ------------------------------------------------------------------ |
@@ -240,13 +245,13 @@ response.delete_cookie("access_token")
 
 ---
 
-## 7️⃣ Sequence Diagram
+## Sequence Diagram
 
 ![Sequence Diagram](./image/mermaid-diagram.png)
 
 ---
 
-## 8️⃣ Security Measures
+## Security Measures
 
 1. **Password Hashing** – Argon2 ensures plain passwords are never stored.
 2. **JWT Signing** – SECRET_KEY ensures tokens are tamper-proof.
@@ -256,7 +261,7 @@ response.delete_cookie("access_token")
 
 ---
 
-## 9️⃣ Optional Improvements
+## Optional Improvements
 
 * **Refresh Tokens**: Keep sessions active without re-login.
 * **Role-based Access**: Admin vs normal users.
@@ -265,7 +270,7 @@ response.delete_cookie("access_token")
 
 ---
 
-## 5️⃣ Database Setup
+## 6 Database Setup
 
 * Uses **SQLite** for simplicity (`test.db`)
 * Table `users` is automatically created using SQLAlchemy:
@@ -288,9 +293,9 @@ class User(Base):
 
 ---
 
-## 6️⃣ Authentication System
+## 7 Authentication System
 
-### 6.1 Password Hashing
+### 7.1 Password Hashing
 
 * **Argon2** algorithm via `passlib`:
 
@@ -304,7 +309,7 @@ def verify_password(plain, hashed):
     return pwd_context.verify(plain, hashed)
 ```
 
-### 6.2 JWT Token
+### 7.2 JWT Token
 
 * Created when a user logs in:
 
@@ -321,7 +326,7 @@ def create_access_token(data: dict):
 
 ---
 
-## 7️⃣ Routes (`auth_routes.py`)
+## 8 Routes (`auth_routes.py`)
 
 | Route     | Method   | Description                           |
 | --------- | -------- | ------------------------------------- |
@@ -342,7 +347,7 @@ def home(request: Request, user: User = Depends(get_current_user)):
 
 ---
 
-## 8️⃣ Templates
+## 9 Templates
 
 * `signup.html` → form to register
 * `login.html` → form to login
@@ -352,7 +357,7 @@ def home(request: Request, user: User = Depends(get_current_user)):
 
 ---
 
-## 9️⃣ JWT Expiration (Time Limit)
+## 10 JWT Expiration (Time Limit)
 
 * Default: 60 minutes
 
@@ -370,7 +375,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 0.1  # 6 seconds
 
 ---
 
-## 10️⃣ Running the Project
+## 11 Running the Project
 
 From project root:
 
@@ -386,7 +391,7 @@ http://127.0.0.1:8000/signup
 
 ---
 
-## 11️⃣ Security Notes
+## 12 Security Notes
 
 1. **SECRET_KEY** must be **kept secret**, used to sign JWT tokens.
 2. **HTTP-only cookie** prevents JavaScript access to token.
@@ -396,7 +401,7 @@ http://127.0.0.1:8000/signup
 
 ---
 
-## 12️⃣ Testing Flow
+## 13 Testing Flow
 
 1. Visit `/signup` → create account
 2. Visit `/login` → authenticate
@@ -406,7 +411,7 @@ http://127.0.0.1:8000/signup
 
 ---
 
-## 13️⃣ Next Steps / Improvements
+## 14 Next Steps / Improvements
 
 * Add **refresh tokens**
 * Add **role-based access** (admin/user)
@@ -417,7 +422,7 @@ http://127.0.0.1:8000/signup
 
 ---
 
-## 14️⃣ References
+## 15 References
 
 * [FastAPI Official Docs](https://fastapi.tiangolo.com/)
 * [SQLAlchemy ORM Docs](https://docs.sqlalchemy.org/en/20/orm/)
