@@ -1,56 +1,79 @@
-Perfect 👍 here is the **complete, clean, working FastAPI JWT auth project** with:
+# 📄 FastAPI JWT Authentication Project Documentation
 
-* ✅ FastAPI
-* ✅ SQLAlchemy
-* ✅ SQLite
-* ✅ Pydantic
-* ✅ APIRouter
-* ✅ Argon2 password hashing
-* ✅ JWT authentication
-* ✅ Jinja2 templates
-* ✅ Login / Signup / Logout
-* ✅ Protected HTML page
-* ✅ Redirect to login if not authenticated
+## 1️⃣ Project Overview
+
+This project is a **full-featured authentication system** built using **FastAPI**, **SQLAlchemy**, **SQLite**, **JWT**, and **Argon2 password hashing**. It demonstrates secure signup, login, logout, and protected routes using HTTP-only cookies.
+
+**Key Features:**
+
+* 🔐 Secure password hashing with Argon2
+* 🎫 JWT-based authentication
+* 🍪 HTTP-only cookies to store JWT tokens
+* 🛡 Protected routes
+* 🔁 Automatic redirect to login for unauthenticated users
+* 📝 Signup / Login / Logout functionality
+* 🖥 Basic HTML templates with Jinja2
 
 ---
 
-# 📁 Project Structure
+## 2️⃣ Technology Stack
+
+| Component             | Purpose                                      |
+| --------------------- | -------------------------------------------- |
+| **FastAPI**           | Web framework for building APIs and web apps |
+| **SQLAlchemy**        | ORM for database modeling                    |
+| **SQLite**            | Lightweight relational database              |
+| **Pydantic**          | Request and response validation              |
+| **Argon2 (passlib)**  | Password hashing                             |
+| **JWT (python-jose)** | JSON Web Token authentication                |
+| **Jinja2**            | HTML templating engine                       |
+| **python-multipart**  | Form data parsing                            |
+
+---
+
+## 3️⃣ Project Structure
 
 ```
 fastapi_auth_app/
 │
-├── main.py
-├── database.py
-├── models.py
-├── schemas.py
-├── auth.py
+├── main.py                 # Entry point for FastAPI app
+├── database.py             # Database setup (SQLAlchemy)
+├── models.py               # Database models (User)
+├── schemas.py              # Pydantic schemas
+├── auth.py                 # JWT creation, verification, password hashing
+├── requirements.txt        # Project dependencies
 │
 ├── routers/
-│   └── auth_routes.py
+│   └── auth_routes.py      # Routes for signup, login, logout, home
 │
-├── templates/
-│   ├── login.html
-│   ├── signup.html
-│   └── home.html
-│
-└── requirements.txt
+└── templates/
+    ├── signup.html         # Signup page
+    ├── login.html          # Login page
+    └── home.html           # Protected home page
 ```
 
 ---
 
-# 📦 requirements.txt
+## 4️⃣ Installation
 
-```
-fastapi
-uvicorn
-sqlalchemy
-python-jose
-passlib[argon2]
-jinja2
-python-multipart
+1. Clone or copy the project folder.
+2. Create a virtual environment (recommended):
+
+### Windows:
+
+```bash
+python -m venv venv
+venv\Scripts\activate
 ```
 
-Install:
+### Mac/Linux:
+
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
+
+3. Install dependencies:
 
 ```bash
 pip install -r requirements.txt
@@ -58,315 +81,304 @@ pip install -r requirements.txt
 
 ---
 
-# 🗄 database.py
+# 🏗 Project Architecture & Data Flow
 
-```python
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base
+This section explains **how data flows from the client (browser) to the server and database**, and how JWT is used to secure the protected routes.
 
-DATABASE_URL = "sqlite:///./test.db"
+---
 
-engine = create_engine(
-    DATABASE_URL, connect_args={"check_same_thread": False}
-)
+## 1️⃣ Overall Architecture
 
-SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
-
-Base = declarative_base()
+```
++-------------------+         HTTP Requests         +-------------------+
+|                   | <--------------------------> |                   |
+|      Browser      |                               |     FastAPI       |
+|  (User Interface) |                               |   Backend API     |
+|                   |         JWT in Cookie        |                   |
++-------------------+                               +-------------------+
+         |                                                   |
+         | Form submission (POST /signup or /login)         |
+         |                                                   |
+         v                                                   v
++-------------------+                               +-------------------+
+|   Jinja2 Template |                               |  Authentication   |
+| (login/signup/home)|                               |  & JWT Handling  |
++-------------------+                               +-------------------+
+         |                                                   |
+         | Render HTML with user data                        |
+         |                                                   |
+         v                                                   v
++-------------------+                               +-------------------+
+|    SQLite DB      | <-------- SQLAlchemy ORM ---- |  Models & Schemas |
++-------------------+                               +-------------------+
 ```
 
 ---
 
-# 👤 models.py
+## 2️⃣ Detailed Data Flow for Signup
+
+1. **User submits signup form** on `/signup` page:
+
+```html
+<form method="post">
+  <input name="username">
+  <input name="password">
+</form>
+```
+
+2. **FastAPI receives POST /signup** in `auth_routes.py`.
+3. Server checks **if username already exists**:
 
 ```python
-from sqlalchemy import Column, Integer, String
-from database import Base
+existing_user = db.query(User).filter(User.username == username).first()
+```
 
+4. **Password is hashed** using Argon2:
+
+```python
+hashed_password = hash_password(password)
+```
+
+5. **New user is created** in SQLite via SQLAlchemy:
+
+```python
+new_user = User(username=username, hashed_password=hashed_password)
+db.add(new_user)
+db.commit()
+```
+
+6. **User redirected to login page**.
+
+---
+
+## 3️⃣ Detailed Data Flow for Login
+
+1. **User submits login form** on `/login` page.
+2. FastAPI receives **POST /login**.
+3. Server retrieves user from DB:
+
+```python
+user = db.query(User).filter(User.username == username).first()
+```
+
+4. **Password verification** using Argon2:
+
+```python
+verify_password(input_password, user.hashed_password)
+```
+
+5. **JWT token is created**:
+
+```python
+token = create_access_token({"sub": user.username})
+```
+
+6. **Token is stored in HTTP-only cookie**:
+
+```python
+response.set_cookie(key="access_token", value=token, httponly=True)
+```
+
+7. User is **redirected to `/home`**, protected page.
+
+---
+
+## 4️⃣ Data Flow for Protected Route (`/home`)
+
+1. Browser sends **GET /home** with **access_token cookie**.
+2. FastAPI dependency `get_current_user` executes:
+
+```python
+token = request.cookies.get("access_token")
+payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+```
+
+3. Server extracts **username from token**:
+
+```python
+username = payload.get("sub")
+```
+
+4. Server queries database for user:
+
+```python
+user = db.query(User).filter(User.username == username).first()
+```
+
+5. If valid:
+
+   * Renders `home.html` template with user data.
+6. If invalid or expired:
+
+   * Redirects to `/login`.
+
+---
+
+## 5️⃣ Data Flow for Logout
+
+1. Browser requests `/logout`.
+2. Server deletes `access_token` cookie:
+
+```python
+response.delete_cookie("access_token")
+```
+
+3. User redirected to `/login`.
+4. Future requests to protected routes fail until login again.
+
+---
+
+## 6️⃣ JWT Lifecycle
+
+| Step       | Description                                                        |
+| ---------- | ------------------------------------------------------------------ |
+| **Create** | Server generates token after successful login (`sub=username`)     |
+| **Store**  | Token sent to browser in **HTTP-only cookie**                      |
+| **Verify** | Each protected request decodes JWT and checks `exp` (expiration)   |
+| **Expire** | After token expires, server rejects request and redirects to login |
+| **Delete** | Logout clears cookie on client                                     |
+
+---
+
+## 7️⃣ Sequence Diagram
+
+![Sequence Diagram](./image/mermaid-diagram.png)
+
+---
+
+## 8️⃣ Security Measures
+
+1. **Password Hashing** – Argon2 ensures plain passwords are never stored.
+2. **JWT Signing** – SECRET_KEY ensures tokens are tamper-proof.
+3. **Token Expiration** – prevents old tokens from being used.
+4. **HTTP-only Cookies** – prevents JS access (protects against XSS).
+5. **Redirects for Unauthorized Access** – ensures protected routes are secure.
+
+---
+
+## 9️⃣ Optional Improvements
+
+* **Refresh Tokens**: Keep sessions active without re-login.
+* **Role-based Access**: Admin vs normal users.
+* **Session Expiry Warning**: Notify users before token expires.
+* **API-only Version**: For mobile or SPA frontends.
+
+---
+
+## 5️⃣ Database Setup
+
+* Uses **SQLite** for simplicity (`test.db`)
+* Table `users` is automatically created using SQLAlchemy:
+
+```python
+Base.metadata.create_all(bind=engine)
+```
+
+* `User` model:
+
+```python
 class User(Base):
     __tablename__ = "users"
-
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True)
     hashed_password = Column(String)
 ```
 
----
-
-# 📘 schemas.py
-
-```python
-from pydantic import BaseModel
-
-class UserCreate(BaseModel):
-    username: str
-    password: str
-
-class TokenData(BaseModel):
-    username: str | None = None
-```
+> **Note:** If you change the model, delete `test.db` to recreate tables.
 
 ---
 
-# 🔐 auth.py
+## 6️⃣ Authentication System
+
+### 6.1 Password Hashing
+
+* **Argon2** algorithm via `passlib`:
 
 ```python
-from datetime import datetime, timedelta
-from jose import JWTError, jwt
-from passlib.context import CryptContext
-from fastapi import Depends, HTTPException, Request
-from fastapi.responses import RedirectResponse
-from sqlalchemy.orm import Session
-from database import SessionLocal
-from models import User
-
-SECRET_KEY = "supersecretkey"
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60
-
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
-# DB dependency
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-# Password hashing
 def hash_password(password: str):
     return pwd_context.hash(password)
 
 def verify_password(plain, hashed):
     return pwd_context.verify(plain, hashed)
+```
 
-# JWT creation
+### 6.2 JWT Token
+
+* Created when a user logs in:
+
+```python
 def create_access_token(data: dict):
     to_encode = data.copy()
     expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-
-# Protected route dependency
-def get_current_user(request: Request, db: Session = Depends(get_db)):
-    token = request.cookies.get("access_token")
-
-    if not token:
-        return RedirectResponse(url="/login", status_code=302)
-
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        username: str = payload.get("sub")
-        if username is None:
-            return RedirectResponse(url="/login", status_code=302)
-    except JWTError:
-        return RedirectResponse(url="/login", status_code=302)
-
-    user = db.query(User).filter(User.username == username).first()
-    if user is None:
-        return RedirectResponse(url="/login", status_code=302)
-
-    return user
 ```
+
+* `SECRET_KEY` is **used to sign the token**.
+* Token stored in HTTP-only cookie.
 
 ---
 
-# 🚦 routers/auth_routes.py
+## 7️⃣ Routes (`auth_routes.py`)
+
+| Route     | Method   | Description                           |
+| --------- | -------- | ------------------------------------- |
+| `/signup` | GET/POST | Render signup form / create user      |
+| `/login`  | GET/POST | Render login form / authenticate user |
+| `/home`   | GET      | Protected page, requires valid JWT    |
+| `/logout` | GET      | Delete cookie and redirect to login   |
+
+**Protected route example:**
 
 ```python
-from fastapi import APIRouter, Depends, Request, Form
-from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
-from sqlalchemy.orm import Session
-from database import Base, engine
-from models import User
-from auth import (
-    get_db,
-    hash_password,
-    verify_password,
-    create_access_token,
-    get_current_user,
-)
-
-Base.metadata.create_all(bind=engine)
-
-router = APIRouter()
-templates = Jinja2Templates(directory="templates")
-
-# ---------------- SIGNUP ----------------
-@router.get("/signup", response_class=HTMLResponse)
-def signup_form(request: Request):
-    return templates.TemplateResponse("signup.html", {"request": request})
-
-@router.post("/signup")
-def signup(
-    request: Request,
-    username: str = Form(...),
-    password: str = Form(...),
-    db: Session = Depends(get_db),
-):
-    existing_user = db.query(User).filter(User.username == username).first()
-    if existing_user:
-        return templates.TemplateResponse(
-            "signup.html",
-            {"request": request, "error": "User already exists"},
-        )
-
-    new_user = User(
-        username=username,
-        hashed_password=hash_password(password),
-    )
-    db.add(new_user)
-    db.commit()
-
-    return RedirectResponse(url="/login", status_code=302)
-
-# ---------------- LOGIN ----------------
-@router.get("/login", response_class=HTMLResponse)
-def login_form(request: Request):
-    return templates.TemplateResponse("login.html", {"request": request})
-
-@router.post("/login")
-def login(
-    request: Request,
-    username: str = Form(...),
-    password: str = Form(...),
-    db: Session = Depends(get_db),
-):
-    user = db.query(User).filter(User.username == username).first()
-
-    if not user or not verify_password(password, user.hashed_password):
-        return templates.TemplateResponse(
-            "login.html",
-            {"request": request, "error": "Invalid credentials"},
-        )
-
-    token = create_access_token({"sub": user.username})
-
-    response = RedirectResponse(url="/home", status_code=302)
-    response.set_cookie(
-        key="access_token",
-        value=token,
-        httponly=True,
-    )
-    return response
-
-# ---------------- HOME (PROTECTED) ----------------
 @router.get("/home", response_class=HTMLResponse)
-def home(
-    request: Request,
-    user: User = Depends(get_current_user),
-):
-    # If get_current_user returned RedirectResponse
+def home(request: Request, user: User = Depends(get_current_user)):
     if isinstance(user, RedirectResponse):
         return user
-
-    return templates.TemplateResponse(
-        "home.html",
-        {"request": request, "user": user},
-    )
-
-# ---------------- LOGOUT ----------------
-@router.get("/logout")
-def logout():
-    response = RedirectResponse(url="/login", status_code=302)
-    response.delete_cookie("access_token")
-    return response
+    return templates.TemplateResponse("home.html", {"request": request, "user": user})
 ```
 
 ---
 
-# 🚀 main.py
+## 8️⃣ Templates
+
+* `signup.html` → form to register
+* `login.html` → form to login
+* `home.html` → shows logged-in username, protected page
+
+> Templates use **Jinja2** for dynamic rendering.
+
+---
+
+## 9️⃣ JWT Expiration (Time Limit)
+
+* Default: 60 minutes
 
 ```python
-from fastapi import FastAPI
-from routers.auth_routes import router
-
-app = FastAPI()
-
-app.include_router(router)
+ACCESS_TOKEN_EXPIRE_MINUTES = 60
 ```
+
+* For testing, you can reduce:
+
+```python
+ACCESS_TOKEN_EXPIRE_MINUTES = 0.1  # 6 seconds
+```
+
+* After expiry, `/home` redirects to login.
 
 ---
 
-# 🖥 templates/signup.html
-
-```html
-<!DOCTYPE html>
-<html>
-<body>
-<h2>Signup</h2>
-
-<form method="post">
-  Username: <input type="text" name="username"><br><br>
-  Password: <input type="password" name="password"><br><br>
-  <button type="submit">Signup</button>
-</form>
-
-{% if error %}
-<p style="color:red;">{{ error }}</p>
-{% endif %}
-
-<a href="/login">Already have an account? Login</a>
-</body>
-</html>
-```
-
----
-
-# 🖥 templates/login.html
-
-```html
-<!DOCTYPE html>
-<html>
-<body>
-<h2>Login</h2>
-
-<form method="post">
-  Username: <input type="text" name="username"><br><br>
-  Password: <input type="password" name="password"><br><br>
-  <button type="submit">Login</button>
-</form>
-
-{% if error %}
-<p style="color:red;">{{ error }}</p>
-{% endif %}
-
-<a href="/signup">Don't have an account? Signup</a>
-</body>
-</html>
-```
-
----
-
-# 🖥 templates/home.html
-
-```html
-<!DOCTYPE html>
-<html>
-<body>
-<h2>Welcome {{ user.username }}</h2>
-
-<p>This page is protected. You are logged in.</p>
-
-<a href="/logout">Logout</a>
-
-</body>
-</html>
-```
-
----
-
-# ▶️ Run the Project
+## 10️⃣ Running the Project
 
 From project root:
 
 ```bash
-uvicorn main:app --reload
+python -m uvicorn main:app --reload
 ```
 
-Open:
+Visit:
 
 ```
 http://127.0.0.1:8000/signup
@@ -374,15 +386,43 @@ http://127.0.0.1:8000/signup
 
 ---
 
-# ✅ What You Now Have
+## 11️⃣ Security Notes
 
-* 🔐 Argon2 password hashing
-* 🎫 JWT authentication
-* 🍪 HTTP-only cookie
-* 🛡 Protected route
-* 🔓 Login
-* 📝 Signup
-* 🚪 Logout
-* 🔁 Redirect if not authenticated
+1. **SECRET_KEY** must be **kept secret**, used to sign JWT tokens.
+2. **HTTP-only cookie** prevents JavaScript access to token.
+3. **Argon2 hashing** ensures passwords are secure.
+4. **JWT Expiry** prevents old tokens from being reused.
+5. Always delete the old SQLite database when changing models.
+
+---
+
+## 12️⃣ Testing Flow
+
+1. Visit `/signup` → create account
+2. Visit `/login` → authenticate
+3. Visit `/home` → access protected page
+4. Logout → cookie deleted → redirected to `/login`
+5. Test expiration → wait for token to expire → refresh `/home` → redirected to login
+
+---
+
+## 13️⃣ Next Steps / Improvements
+
+* Add **refresh tokens**
+* Add **role-based access** (admin/user)
+* Deploy to **cloud platforms** (Render, Railway)
+* Use **PostgreSQL** instead of SQLite for production
+* Add **Bootstrap** or **Tailwind** for better UI
+* Add **API-only version** for React/Next.js frontend
+
+---
+
+## 14️⃣ References
+
+* [FastAPI Official Docs](https://fastapi.tiangolo.com/)
+* [SQLAlchemy ORM Docs](https://docs.sqlalchemy.org/en/20/orm/)
+* [Passlib – Password Hashing](https://passlib.readthedocs.io/en/stable/)
+* [python-jose – JWT](https://python-jose.readthedocs.io/en/latest/)
+* [Jinja2 Templates](https://jinja.palletsprojects.com/en/3.1.x/)
 
 ---
