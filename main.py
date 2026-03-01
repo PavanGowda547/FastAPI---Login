@@ -1,6 +1,5 @@
-def main():
-    print("Hello from login!")
+from fastapi import FastAPI
+from routers.auth_routes import router
 
-
-if __name__ == "__main__":
-    main()
+app = FastAPI()
+app.include_router(router)
